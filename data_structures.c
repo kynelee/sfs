@@ -1,3 +1,18 @@
+#define EMPTY_TYPE 0
+#define DIRECTORY_TYPE 0
+#define FILE_TYPE 0
+#define MAGIC_NUMBER 696969
+#define SUPERBLOCK_SIZE 
+
+
+// TODO 
+//
+// INODE attributes/metadata
+// Linked list for free blocks
+// Linked list for free inodes
+// Collapsing Blocks within Inodes 
+// 
+
 /* Data structures for representing SFS */
 
 
@@ -9,7 +24,7 @@
  * SuperBlock is used to find available blocks, and index into
  * inodes/blocks. 
  */
-struct SuperBlock { 
+typedef struct SuperBlock { 
   const void * inode_start; // pointer to start of inodes 
   const int inode_size; // size of each inode
 
@@ -23,10 +38,38 @@ struct SuperBlock {
   const int * block_size;  // size in bytes of each block 
   const int * block_num;  // number of blocks
 
-  Block free_blocks[block_num]; // array of pointers of free blocks  TODO Might need to change this to linked list 
-  int free_blocks_count; // count of how many free blocks are available
+
+  const int * metablock_start;
+  const int * metablock_size;  
+};
+
+
+SuperBlock unpack_superblock(char * filesystem) {
+  // Unpack superblock struct 
 }
 
+void pack_superblock(char * filesystem, SuperBlock sb){
+
+}
+
+
+typedef struct AllocatorBlock { // represents availalble blocks and inodes
+  unsigned int free_blocks_count; // count of how many free blocks are available
+  unsigned int free_blocks[MAX_BLOCK]; // array of int
+
+  unsigned int free_inode_count; //array of inode 
+  unsigned int free_inodes[MAX_INODE];
+}
+
+AllocatorBlock unpack_allocatorblock(char * filesystem){
+
+
+}
+
+typedef struct MetaBlock {
+  SingleMap single_maps[MAX_SINGLE_MAPS];
+  DoubleMap double_maps[MAX_DOUBLE_MAPS];
+}
 
 
 /* A block struct represents all the data about a block 
@@ -37,7 +80,7 @@ struct SuperBlock {
 struct Block {
   const int block_id;  // which block number (0...block_count) this corresponds to 
   const void * block_pointer: // which memory address this block is located
-  const void * filled; // how much of this block is filled
+  const int filled; // how much of this block is filled
 }
 
 
@@ -61,27 +104,25 @@ struct DoubleMap {
  * To store the files data itself, each inode has a fixed number of 
  * directly mapped blocks, another constant number of single maps which point to lists of blocks, 
  * and a number of double maps which point to lists of single maps
- * Inodes allocate blocks first directly mapped, then single mapped, 
+ * Inodes allocate blocks first directly mapped, then single mappedg 
  * then double mapped (until the size of each runs out). 
+ *
+ * An Inode can also represent a directory - in this case, the data blocks
+ * that it points to represent a list of directoryPair structs
  * 
  * An Inode also stores file metadata information, such as the name,
  * position relative to other files, and 
  */
 
-struct INode {
-  enum type; // Either directory, file, or link? 
+struct iNode {
+  int type; // either DIRECTORY_TYPE OR FILE_TYPE OR EMPTY_TYPE
 
-  // Data - only relevant if file
-  Block direct_mapped_blocks[NUM_DIRECT]//  list of direct mapped blocks. 
-  SingleMap * single_mapped_blocks[NUM_SINGLE_MAP]; // list of lists of direct mapped blocks.
-  DoubleMap * double_mapped_blocks[NUM_DOUBLE_MAP]; // list of lists of lists of direct mapped blocks.
+  Block * direct_mapped_blocks[NUM_DIRECT]//  list of direct mapped blocks. 
+  SingleMap * single_maps[NUM_SINGLE_MAP]; // list of lists of direct mapped blocks.
+  DoubleMap * double_maps[NUM_DOUBLE_MAP]; // list of lists of lists of direct mapped blocks.
+}
 
-
-  // File Metadata and Location  
-  char * path;
-
-
-  // Directory Specific information
-  INode ** children; // List of children  
-  INode * parent; // Parent to this directory 
+struct DirectoryPair {
+  char name[4096]; 
+  int inode_index;
 }
