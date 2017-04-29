@@ -43,6 +43,16 @@
 
 #include "log.h"
 
+#include <sys.mman.h>
+#include <sys/types.h>
+#include <unistd.h>
+
+#define FS_SIZE 16777216 
+
+
+char * fs;  // File system GLOBAL 
+
+
 //  All the paths I see are relative to the root of the mounted
 //  filesystem.  In order to get to the underlying filesystem, I need to
 //  have the mountpoint.  I'll save it away early on in main(), and then
@@ -682,6 +692,53 @@ int bb_fsyncdir(const char *path, int datasync, struct fuse_file_info *fi)
 // FUSE).
 void *bb_init(struct fuse_conn_info *conn)
 {
+    int fd, pagesize;
+
+    const char * filepath = "../examples/testfs"
+
+    fd = open(filepath, O_RDWR | O_CREAT, (mode_t) 0600);
+
+    if (fd == - 1){
+      perror("Cannot open file for writing");
+      exit(EXIT_FAILURE);
+    }
+
+    /* Create and stretch file if not correct size */ 
+    if (lseek(fd, FILE_SIZE, SEEK_SET) == -1)
+    {
+        close(fd);
+        perror("Error calling lseek() to 'stretch' the file");
+        exit(EXIT_FAILURE);
+    }
+    
+    /* Write last byte as null string to indicate end of the file */ 
+
+    if (write(fd, "", 1) == -1)
+    {
+        close(fd);
+        perror("Error writing last byte of the file");
+        exit(EXIT_FAILURE);
+    }
+    
+
+    // Now the file is ready to be mmapped.
+    fs = mmap(0, FILE_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+
+    if (map == MAP_FAILED)
+    {
+        close(fd);
+        perror("Error mmapping the file");
+        exit(EXIT_FAILURE);
+    }
+
+    
+    // Check for magic number and initialize if necessary 
+  
+    if ((int) *fs != MAGIC_NUMBER){
+      // Create all structures 
+    }
+
+
     log_msg("\nbb_init()\n");
     
     log_conn(conn);
